@@ -40,7 +40,7 @@ public final class ClientService implements Runnable {
         clientMessage = formatMessage(clientMessage);
         System.out.println(clientMessage);
         DataOutputStream clientOutputStream = null;
-        for (Socket client : NewServer.clientList) {
+        for (Socket client : Server.clientList) {
             if(this.clientSocket == client) {
                 continue;
             }

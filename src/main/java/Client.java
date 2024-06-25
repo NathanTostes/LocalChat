@@ -1,49 +1,63 @@
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Client {
-	private static Scanner messager = new Scanner(System.in);
-	private static Socket socket = null;
-	private static DataInputStream in;
-	private static DataOutputStream out;
+    public static Socket serverSocket = null;
+    private static DataInputStream serverInputStream = null;
+    private static DataOutputStream serverOutputStream = null;
+    private static ExecutorService serverThread = Executors.newSingleThreadExecutor();
+    private static boolean serverOpen = true;
 
-	public static void main(String[] args) {
-		connect();
-		listenMessages();
-		closeConnections();
-	}
+    public static void main(String[] args) {
+        if (!estabilishServerConnections()) {
+            return;
+        }
+        serverThread.execute(new MessageSender(serverOutputStream));
+        listenServerMessages();
+        closeConnections();
+    }
 
-	private static void connect() {
-		try {
-			socket = new Socket("localhost", 9999);
-			out = new DataOutputStream(socket.getOutputStream());
-			in = new DataInputStream(socket.getInputStream());
-			Thread serverMessages = new Thread(new ClientMessages(in));
-			serverMessages.start();
-		} catch (IOException e) {
-			System.out.println("(Error) Connect to server failed");
-		}
-	}
+    private static boolean estabilishServerConnections() {
+        try {
+            serverSocket = new Socket("localhost", 9999);
+            serverInputStream = new DataInputStream(serverSocket.getInputStream());
+            serverOutputStream = new DataOutputStream(serverSocket.getOutputStream());
+            System.out.println("Connection estabilish with server");
+            return true;
+        } catch (IOException e) {
+            System.out.println("(ERROR) Connection with server fail");
+            return false;
+        }
+    }
 
-	private static void listenMessages() {
-		String message = "";
-		try {
-			while ((message = messager.nextLine()) != null) {
-				out.writeUTF(message);
-			}
-		} catch (IOException e) {
-		}
-	}
+    private static void listenServerMessages() {
+        String serverMessage = "";
+        try {
+            while ((serverMessage = serverInputStream.readUTF()) != null) {
+                System.out.println(serverMessage);
+            }
+        } catch (IOException e) {
+            System.out.println("Server was closed");
+        }
+    }
 
-	private static void closeConnections() {
-		try {
-			messager.close();
-			socket.close();
-			out.close();
-			in.close();
-		} catch (IOException e) {
-			System.out.println("(Error) Connections has not closed correctly");
-		}
-	}
+    public static boolean isServerOpen() {
+        return serverOpen;
+    }
+
+    private static void closeConnections() {
+        try {
+            serverInputStream.close();
+            serverOutputStream.close();
+            serverSocket.close();
+            serverThread.shutdownNow();
+            serverOpen = false;
+        } catch (IOException e) {
+            System.out.println("Connections not close correctly");
+        }
+    }
 }
