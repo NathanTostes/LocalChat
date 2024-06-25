@@ -24,18 +24,21 @@ public class Client {
         System.out.println("Enter the host inet address (or write \"localhost\" for connect on the same machine): ");
         String host = new Scanner(System.in).nextLine();
         System.out.println("Enter the port on which client will connect: ");
-        int port = new Scanner(System.in).nextInt();
+        String port = new Scanner(System.in).nextLine();
         estabilishServerConnections(host, port);
     }
 
-    private static void estabilishServerConnections(String host, int port) {
+    private static void estabilishServerConnections(String host, String port) {
         try {
-            serverSocket = new Socket(host, port);
+            serverSocket = new Socket(host, Integer.parseInt(port));
             serverInputStream = new DataInputStream(serverSocket.getInputStream());
             serverOutputStream = new DataOutputStream(serverSocket.getOutputStream());
             System.out.println("Connection estabilish with server");
         } catch (IOException e) {
-            System.out.println("Connection with server fail, try again");
+            System.out.println("Connection with server fail (invalid host inet address or port already used), try again");
+            readWantedConnectionPort();
+        } catch (IllegalArgumentException e) {
+            System.out.println("Invalid port number, try again");
             readWantedConnectionPort();
         }
     }

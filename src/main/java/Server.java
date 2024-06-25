@@ -19,16 +19,19 @@ public class Server {
 
     public static void readWantedPort() {
         System.out.println("Enter the port on which the server will open: ");
-        int port = new Scanner(System.in).nextInt();
-        openServerSocketAtPort(port);
+        String portString = new Scanner(System.in).nextLine();
+        openServerSocketAtPort(portString);
     }
 
-    public static void openServerSocketAtPort(int port) {
+    public static void openServerSocketAtPort(String port) {
         try {
-            serverSocket = new ServerSocket(port);
+            serverSocket = new ServerSocket(Integer.parseInt(port));
             System.out.println("Server has oppened");
         } catch (IOException e) {
             System.out.println("Application port already open, try again");
+            readWantedPort();
+        } catch (IllegalArgumentException e) {
+            System.out.println("Invalid port number, try again");
             readWantedPort();
         }
     }
