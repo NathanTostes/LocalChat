@@ -2,6 +2,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -13,24 +14,29 @@ public class Client {
     private static boolean serverOpen = true;
 
     public static void main(String[] args) {
-        if (!estabilishServerConnections()) {
-            return;
-        }
+        readWantedConnectionPort();
         serverThread.execute(new MessageSender(serverOutputStream));
         listenServerMessages();
         closeConnections();
     }
 
-    private static boolean estabilishServerConnections() {
+    private static void readWantedConnectionPort() {
+        System.out.println("Enter the host inet address (or write \"localhost\" for connect on the same machine): ");
+        String host = new Scanner(System.in).nextLine();
+        System.out.println("Enter the port on which client will connect: ");
+        int port = new Scanner(System.in).nextInt();
+        estabilishServerConnections(host, port);
+    }
+
+    private static void estabilishServerConnections(String host, int port) {
         try {
-            serverSocket = new Socket("localhost", 9999);
+            serverSocket = new Socket(host, port);
             serverInputStream = new DataInputStream(serverSocket.getInputStream());
             serverOutputStream = new DataOutputStream(serverSocket.getOutputStream());
             System.out.println("Connection estabilish with server");
-            return true;
         } catch (IOException e) {
-            System.out.println("(ERROR) Connection with server fail");
-            return false;
+            System.out.println("Connection with server fail, try again");
+            readWantedConnectionPort();
         }
     }
 

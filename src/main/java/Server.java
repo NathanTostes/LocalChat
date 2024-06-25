@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -11,19 +12,24 @@ public class Server {
     public static ArrayList<Socket> clientList = new ArrayList<>();
 
     public static void main(String[] args) {
-        ServerSocket serverSocket = openServerSocket();
+        readWantedPort();
         listenConnections(serverSocket);
         closeAllConnections();
     }
 
-    public static ServerSocket openServerSocket() {
+    public static void readWantedPort() {
+        System.out.println("Enter the port on which the server will open: ");
+        int port = new Scanner(System.in).nextInt();
+        openServerSocketAtPort(port);
+    }
+
+    public static void openServerSocketAtPort(int port) {
         try {
-            serverSocket = new ServerSocket(9999);
+            serverSocket = new ServerSocket(port);
             System.out.println("Server has oppened");
-            return serverSocket;
         } catch (IOException e) {
-            System.out.println("(ERROR) Application port already open");
-            return null;
+            System.out.println("Application port already open, try again");
+            readWantedPort();
         }
     }
 
