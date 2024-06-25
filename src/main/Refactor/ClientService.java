@@ -2,57 +2,64 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.LinkedList;
 
-public final class ClientManager implements Runnable {
-    private int numberOfClients = 0;
+public final class ClientService implements Runnable {
+    private static int numberOfClients = 0;
     private String clientId = null;
     private Socket clientSocket = null;
+    private DataInputStream clientInputStream = null;
+    private DataOutputStream clientOutputStream = null;
 
 
-    public ClientManager(Socket clientSocket) {
+    public ClientService(Socket clientSocket) {
         numberOfClients++;
         this.clientId = "User " + numberOfClients;
         this.clientSocket = clientSocket;
+        try {
+            clientInputStream = new DataInputStream(clientSocket.getInputStream());
+            clientOutputStream = new DataOutputStream(clientSocket.getOutputStream());
+        } catch (IOException e) {
+            System.out.println("(Error) Connection stream not opened");
+        }
         System.out.println("New connection with " + clientId);
-    }
-
-    public String getClientId() {
-        return this.clientId;
     }
 
     @Override
     public void run() {
-        try (DataInputStream clientInputStream = (DataInputStream) clientSocket.getInputStream()) {
-            String clientMessage = "";
+        String clientMessage = "";
+        try {
             while ((clientMessage = clientInputStream.readUTF()) != null) {
-                sendForAllOtherClients(clientMessage);
+                sendMessage(clientMessage);
             }
         } catch (IOException e) {
-            System.out.println("(ERROR) Message from " + clientId + " can not be read");
+            closeConnection();
         }
-        closeConnection();
     }
 
-    private void sendForAllOtherClients(String clientMessage) {
+    private void sendMessage(String clientMessage) {
+        if(clientMessage.isBlank()) {
+            return;
+        }
         clientMessage = clientId + ": " + clientMessage;
         System.out.println(clientMessage);
         for (Socket client : NewServer.clientList) {
             if (this.clientSocket == client) {
                 continue;
             }
-            try (DataOutputStream clientOutputStream = (DataOutputStream) client.getOutputStream()) {
+            try {
                 clientOutputStream.writeUTF(clientMessage);
             } catch (IOException e) {
-                System.out.println("(ERROR) Message not send for all users");
+                System.out.println("(ERROR) Message can not be sent for all users");
             }
         }
     }
 
     private void closeConnection() {
         try {
+            sendMessage("has left");
+            clientInputStream.close();
+            clientOutputStream.close();
             clientSocket.close();
-            sendForAllOtherClients(clientId + " has left");
         } catch (IOException e) {
             System.out.println("(ERROR) Connection with " + clientId + " not close correctly");
         }

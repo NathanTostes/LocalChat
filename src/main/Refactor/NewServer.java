@@ -1,14 +1,14 @@
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class NewServer {
-    private int numberOfClients = 0;
-    private static ExecutorService clientManager = Executors.newCachedThreadPool();
-    public static LinkedList<Socket> clientList = new LinkedList<>();
+    private static ServerSocket serverSocket = null;
+    private static ExecutorService clientExecutorService = Executors.newCachedThreadPool();
+    public static ArrayList<Socket> clientList = new ArrayList<>();
 
     public static void main(String[] args) {
         ServerSocket serverSocket = openServerSocket();
@@ -18,7 +18,7 @@ public class NewServer {
 
     public static ServerSocket openServerSocket() {
         try {
-            ServerSocket serverSocket = new ServerSocket(6900);
+            serverSocket = new ServerSocket(9999);
             System.out.println("Server has oppened");
             return serverSocket;
         } catch (IOException e) {
@@ -29,9 +29,10 @@ public class NewServer {
 
     private static void listenConnections(ServerSocket serverSocket) {
         while (true) {
-            try (Socket clientSocket = serverSocket.accept()) {
+            try {
+                Socket clientSocket = serverSocket.accept();
                 clientList.add(clientSocket);
-                clientManager.execute(new ClientManager(clientSocket));
+                clientExecutorService.execute(new ClientService(clientSocket));
             } catch (IOException e) {
                 System.out.println("(ERROR) Connection fail");
             }
@@ -39,7 +40,7 @@ public class NewServer {
     }
 
     private static void closeAllConnections() {
-        clientManager.close();
+        clientExecutorService.close();
         for (Socket clientSocket : clientList) {
             try {
                 clientSocket.close();
